@@ -77,3 +77,9 @@ def test_generate_puzzle_returns_valid_puzzle_and_solution():
     assert sum(cell != sudoku_logic.EMPTY for row in solution for cell in row) == 81
     assert puzzle != solution
     assert_valid_completed_board(solution)
+
+
+def test_generate_puzzle_has_exactly_one_valid_solution():
+    for _ in range(10):
+        puzzle, _ = sudoku_logic.generate_puzzle(35)
+        assert sudoku_logic.count_solutions(puzzle, limit=2) == 1

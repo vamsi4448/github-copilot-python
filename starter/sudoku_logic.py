@@ -10,6 +10,44 @@ def deep_copy(board):
 def create_empty_board():
     return [[EMPTY for _ in range(SIZE)] for _ in range(SIZE)]
 
+
+def find_empty_cell(board):
+    for row in range(SIZE):
+        for col in range(SIZE):
+            if board[row][col] == EMPTY:
+                return row, col
+    return None
+
+
+def count_solutions(board, limit=2):
+    working = deep_copy(board)
+    solution_count = 0
+
+    def search():
+        nonlocal solution_count
+        if solution_count >= limit:
+            return
+
+        empty_cell = find_empty_cell(working)
+        if empty_cell is None:
+            solution_count += 1
+            return
+
+        row, col = empty_cell
+        for num in range(1, SIZE + 1):
+            if not is_safe(working, row, col, num):
+                continue
+            working[row][col] = num
+            search()
+            if solution_count >= limit:
+                working[row][col] = EMPTY
+                return
+            working[row][col] = EMPTY
+
+    search()
+    return solution_count
+
+
 def is_safe(board, row, col, num):
     # Check row and column
     for x in range(SIZE):
@@ -23,6 +61,7 @@ def is_safe(board, row, col, num):
             if board[start_row + i][start_col + j] == num:
                 return False
     return True
+
 
 def fill_board(board):
     for row in range(SIZE):
@@ -39,6 +78,7 @@ def fill_board(board):
                 return False
     return True
 
+
 def remove_cells(board, clues):
     attempts = SIZE * SIZE - clues
     while attempts > 0:
@@ -48,10 +88,43 @@ def remove_cells(board, clues):
             board[row][col] = EMPTY
             attempts -= 1
 
+
 def generate_puzzle(clues=35):
+    max_attempts = 200
+
+    for _ in range(max_attempts):
+        board = create_empty_board()
+        fill_board(board)
+        solution = deep_copy(board)
+        puzzle = deep_copy(board)
+
+        positions = [(row, col) for row in range(SIZE) for col in range(SIZE)]
+        random.shuffle(positions)
+
+        for row, col in positions:
+            if sum(cell != EMPTY for line in puzzle for cell in line) <= clues:
+                break
+            value = puzzle[row][col]
+            puzzle[row][col] = EMPTY
+            if count_solutions(puzzle, limit=2) != 1:
+                puzzle[row][col] = value
+
+        if sum(cell != EMPTY for line in puzzle for cell in line) == clues and count_solutions(puzzle, limit=2) == 1:
+            return puzzle, solution
+
     board = create_empty_board()
     fill_board(board)
     solution = deep_copy(board)
-    remove_cells(board, clues)
     puzzle = deep_copy(board)
+    positions = [(row, col) for row in range(SIZE) for col in range(SIZE)]
+    random.shuffle(positions)
+
+    for row, col in positions:
+        if sum(cell != EMPTY for line in puzzle for cell in line) <= clues:
+            break
+        value = puzzle[row][col]
+        puzzle[row][col] = EMPTY
+        if count_solutions(puzzle, limit=2) != 1:
+            puzzle[row][col] = value
+
     return puzzle, solution
