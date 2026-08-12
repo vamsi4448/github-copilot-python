@@ -83,3 +83,17 @@ def test_generate_puzzle_has_exactly_one_valid_solution():
     for _ in range(10):
         puzzle, _ = sudoku_logic.generate_puzzle(35)
         assert sudoku_logic.count_solutions(puzzle, limit=2) == 1
+
+
+def test_get_clues_for_difficulty_returns_expected_values():
+    assert sudoku_logic.get_clues_for_difficulty('easy') == 45
+    assert sudoku_logic.get_clues_for_difficulty('medium') == 35
+    assert sudoku_logic.get_clues_for_difficulty('hard') == 28
+
+
+def test_generate_puzzle_for_each_difficulty_has_unique_solution():
+    for difficulty in ('easy', 'medium', 'hard'):
+        clues = sudoku_logic.get_clues_for_difficulty(difficulty)
+        puzzle, _ = sudoku_logic.generate_puzzle(clues)
+        assert sum(cell != sudoku_logic.EMPTY for row in puzzle for cell in row) == clues
+        assert sudoku_logic.count_solutions(puzzle, limit=2) == 1

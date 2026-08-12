@@ -15,7 +15,22 @@ def index():
 
 @app.route('/new')
 def new_game():
-    clues = int(request.args.get('clues', 35))
+    difficulty = request.args.get('difficulty')
+    clues_param = request.args.get('clues')
+
+    if difficulty:
+        try:
+            clues = sudoku_logic.get_clues_for_difficulty(difficulty)
+        except ValueError:
+            clues = sudoku_logic.DIFFICULTY_LEVELS[sudoku_logic.DEFAULT_DIFFICULTY]
+    elif clues_param is not None:
+        try:
+            clues = int(clues_param)
+        except ValueError:
+            clues = sudoku_logic.DIFFICULTY_LEVELS[sudoku_logic.DEFAULT_DIFFICULTY]
+    else:
+        clues = sudoku_logic.DIFFICULTY_LEVELS[sudoku_logic.DEFAULT_DIFFICULTY]
+
     puzzle, solution = sudoku_logic.generate_puzzle(clues)
     CURRENT['puzzle'] = puzzle
     CURRENT['solution'] = solution

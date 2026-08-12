@@ -3,6 +3,12 @@ import random
 
 SIZE = 9
 EMPTY = 0
+DEFAULT_DIFFICULTY = 'medium'
+DIFFICULTY_LEVELS = {
+    'easy': 45,
+    'medium': 35,
+    'hard': 28,
+}
 
 def deep_copy(board):
     return copy.deepcopy(board)
@@ -128,3 +134,14 @@ def generate_puzzle(clues=35):
             puzzle[row][col] = value
 
     return puzzle, solution
+
+
+def get_clues_for_difficulty(difficulty):
+    if not isinstance(difficulty, str):
+        raise ValueError('Difficulty must be a string')
+
+    difficulty_key = difficulty.lower().strip()
+    if difficulty_key not in DIFFICULTY_LEVELS:
+        raise ValueError(f'Unknown difficulty {difficulty!r}')
+
+    return DIFFICULTY_LEVELS[difficulty_key]

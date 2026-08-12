@@ -1,3 +1,5 @@
+import sudoku_logic
+
 from app import CURRENT, app
 
 
@@ -19,6 +21,22 @@ def test_new_game_route_returns_puzzle_and_stores_solution(client):
     assert sum(cell != 0 for row in payload['puzzle'] for cell in row) == 35
     assert CURRENT['solution'] is not None
     assert len(CURRENT['solution']) == 9
+
+
+def test_new_game_route_respects_difficulty_levels(client):
+    difficulties = {
+        'easy': 45,
+        'medium': 35,
+        'hard': 28,
+    }
+
+    for difficulty, expected_clues in difficulties.items():
+        response = client.get(f'/new?difficulty={difficulty}')
+        assert response.status_code == 200
+        payload = response.get_json()
+        assert sum(cell != 0 for row in payload['puzzle'] for cell in row) == expected_clues
+        assert CURRENT['solution'] is not None
+        assert sudoku_logic.count_solutions(payload['puzzle'], limit=2) == 1
 
 
 def test_check_solution_route_reports_incorrect_cells(client):
