@@ -8,6 +8,12 @@ def test_index_route_returns_html(client):
 
     assert response.status_code == 200
     assert response.content_type.startswith('text/html')
+    text = response.get_data(as_text=True)
+    assert 'id="timer"' in text
+    assert 'id="elapsed-time"' in text
+    assert 'id="theme-toggle"' in text
+    assert 'Top 10 Fastest Times' in text
+    assert 'id="scoreboard-body"' in text
 
 
 def test_new_game_route_returns_puzzle_and_stores_solution(client):
@@ -54,6 +60,69 @@ def test_check_solution_route_reports_incorrect_cells(client):
     payload = response.get_json()
     assert [0, 0] in payload['incorrect']
     assert payload['incorrect']
+
+
+def test_check_solution_route_reports_complete_when_board_is_correct(client):
+    client.get('/new?clues=35')
+    response = client.post('/check', json={'board': CURRENT['solution']})
+
+    assert response.status_code == 200
+    payload = response.get_json()
+    assert payload['incorrect'] == []
+    assert payload['complete'] is True
+
+
+def test_check_solution_route_reports_incomplete_when_empty_cells_remain(client):
+    client.get('/new?clues=35')
+    board = [row[:] for row in CURRENT['solution']]
+    board[0][0] = 0
+
+    response = client.post('/check', json={'board': board})
+
+    assert response.status_code == 200
+    payload = response.get_json()
+    assert payload['incorrect'] == []
+    assert payload['complete'] is False
+
+
+def test_hint_route_returns_one_empty_cell(client):
+    client.get('/new?clues=35')
+    puzzle = CURRENT['puzzle']
+    board = [row[:] for row in puzzle]
+
+    response = client.post('/hint', json={'board': board})
+
+    assert response.status_code == 200
+    payload = response.get_json()
+    assert payload['row'] is not None
+    assert payload['col'] is not None
+    assert payload['value'] == CURRENT['solution'][payload['row']][payload['col']]
+    assert board[payload['row']][payload['col']] == 0
+
+
+def test_hint_route_respects_player_entries(client):
+    client.get('/new?clues=35')
+    puzzle = CURRENT['puzzle']
+    board = [row[:] for row in puzzle]
+
+    # fill one empty cell with a player-entered value and leave another empty
+    empty_cells = [(i, j) for i in range(9) for j in range(9) if board[i][j] == 0]
+    assert empty_cells
+    player_row, player_col = empty_cells[0]
+    board[player_row][player_col] = 1
+
+    response = client.post('/hint', json={'board': board})
+    assert response.status_code == 200
+    payload = response.get_json()
+    assert [payload['row'], payload['col']] != [player_row, player_col]
+    assert payload['value'] == CURRENT['solution'][payload['row']][payload['col']]
+
+
+def test_hint_without_game_returns_400(client):
+    response = client.post('/hint', json={'board': [[0 for _ in range(9)] for _ in range(9)]})
+
+    assert response.status_code == 400
+    assert response.get_json() == {'error': 'No game in progress'}
 
 
 def test_check_solution_without_game_returns_400(client):
